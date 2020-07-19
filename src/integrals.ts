@@ -2,6 +2,8 @@ import { Func } from "./func";
 import { VectorField } from "./vector_field";
 import { Vector } from "./vector";
 
+
+// Make sure this is cuberoot-able
 let N = 1000
 
 // simpson
@@ -80,4 +82,54 @@ export function integrate_surface(A: VectorField, tl: Vector, tr: Vector, br: Ve
     }
 
     return sum
+}
+
+export function integrate_surface_cube(A: VectorField, c1: Vector, c2: Vector) {
+    let width = c2.x() - c1.x()
+    let height = c2.y() - c1.y()
+    let depth = c2.z() - c1.z()
+
+    let bbl = c1
+    let bbr = bbl.add(new Vector(width, 0, 0))
+    let btl = bbl.add(new Vector(0, height, 0))
+    let btr = bbl.add(new Vector(width, height, 0))
+
+    let fbl = bbl.add(new Vector(0, 0, depth))
+    let fbr = bbl.add(new Vector(width, 0, depth))
+    let ftl = bbl.add(new Vector(0, height, depth))
+    let ftr = bbl.add(new Vector(width, height, depth))
+
+    // (tl, tr, br)
+    N /= 6
+    let out = 0
+    out += integrate_surface(A, ftl, ftr, fbr) //front
+    out += integrate_surface(A, btr, btl, bbl) //back 
+    out += integrate_surface(A, ftr, btr, bbr) //right
+    out += integrate_surface(A, btl, ftl, fbl) //left
+    out += integrate_surface(A, btl, btr, ftr) //top
+    out += integrate_surface(A, fbl, fbr, bbr) //bottom
+    N *= 6
+
+    return out
+}
+
+// center
+export function integrate_volume_cube(F: Func, c1: Vector, c2: Vector): number {
+    let delta = c2.sub(c1).multiplyScalar(1 / Math.cbrt(N));
+    let area = delta.x() * delta.y() * delta.z()
+
+    let out = 0
+    for (let x = 0; x < Math.cbrt(N); x++) {
+        for (let y = 0; y < Math.cbrt(N); y++) {
+            for (let z = 0; z < Math.cbrt(N); z++) {
+                let v = new Vector(c1.x() + delta.x() * (x + .5),
+                    c1.y() + delta.y() * (y + .5),
+                    c1.z() + delta.z() * (z + .5))
+
+                out += F.evaluate(v.toObject())
+            }
+        }
+    }
+    out *= area
+    return out
 }

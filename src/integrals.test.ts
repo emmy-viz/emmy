@@ -4,7 +4,8 @@ const expect = chai.expect;
 import { Vector } from './vector';
 import { Func } from "./func"
 import { VectorField } from './vector_field';
-import { integrate, integrate_line, integrate_path, integrate_surface } from "./integrals"
+import { integrate, integrate_line, integrate_path, integrate_surface, integrate_volume_cube, integrate_surface_cube } from "./integrals"
+import { divergence, curl } from './operators';
 
 describe("integrator", () => {
     it("should integrate", () => {
@@ -37,5 +38,40 @@ describe("integrator", () => {
         let br = new Vector(2, 2, 0)
 
         expect(integrate_surface(A, tl, tr, br)).to.closeTo(16, .2)
+    })
+
+    it('should take volume area', () => {
+        let a = new Vector(0, 0, 0)
+        let b = new Vector(1, 1, 1)
+        let f = new Func("5")
+
+        expect(integrate_volume_cube(f, a, b)).to.closeTo(5, .000001)
+    })
+
+    it("should respect divergence theorem", () => {
+        let A = new VectorField(new Func("y^2"), new Func("2*x*y + z^2"), new Func("2 * y * z"))
+        let a = new Vector(0, 0, 0)
+        let b = new Vector(1, 1, 1)
+
+        expect(integrate_volume_cube(divergence(A), a, b)).to.closeTo(2, .0001)
+        expect(integrate_surface_cube(A, a, b)).to.closeTo(2, .1)
+    })
+
+    it("should respect stokes' theorem", () => {
+        let A = new VectorField(new Func("0"), new Func("2*x*z + 3 * y^2"), new Func("4 y z^2"))
+        let a = new Vector(0, 0, 0)
+        let b = new Vector(0, 1, 1)
+
+        expect(integrate_surface(curl(A), a, new Vector(0, 0, 1), b)).to.closeTo(4 / 3, .1)
+
+        let path: Vector[] = [
+            new Vector(0, 0, 0),
+            new Vector(0, 1, 0),
+            new Vector(0, 1, 1),
+            new Vector(0, 0, 1),
+            new Vector(0, 0, 0)
+        ]
+
+        expect(integrate_path(A, path)).to.closeTo(4 / 3, .00001)
     })
 })

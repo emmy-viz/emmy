@@ -9,6 +9,7 @@ import { Func } from "./func"
 import { gradient, divergence, curl } from "./operators"
 import { VectorField } from './vector_field';
 import { format } from 'mathjs';
+import { integrate_line } from './integrals';
 
 describe("operators", () => {
     it("should take gradients", () => {
@@ -61,5 +62,13 @@ describe("operators", () => {
         let s2 = B.dotProduct(curl(A)).sub(A.dotProduct(curl(B)))
 
         expect(s1.evaluate({ x: 4, y: 3, z: 1 })).to.be.equal(s2.evaluate({ x: 4, y: 3, z: 1 }))
+    })
+
+    it("should respect fundamental theorem of gradients", () => {
+        var f = new Func("12x^2 + 13y + z")
+        var a = new Vector(4, 5, 2)
+        var b = new Vector(1, 4, 8)
+
+        expect(integrate_line(gradient(f), a, b)).to.closeTo(f.evaluate(b.toObject()) - f.evaluate(a.toObject()), .0001)
     })
 })
