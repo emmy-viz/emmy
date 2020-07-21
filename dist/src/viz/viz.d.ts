@@ -9,10 +9,20 @@ export declare class Viz {
     renderer: THREE.Renderer;
     controls: OrbitControls;
     width: number;
+    testPointCount: number;
+    testPointE: VectorField;
     constructor(canvas: HTMLCanvasElement);
     init(): void;
     drawGrid(): void;
+    drawSphere(origin: Vector, color: number): void;
     drawVector(origin: any, v: Vector, color?: number): THREE.ArrowHelper;
-    drawVectorField(vf: VectorField, color?: number): void;
+    drawVectorField(vf: VectorField, color?: number, widthScale?: number): void;
+    drawTestPoints(E: VectorField): void;
+    updateTestPoints(): void;
     animate(): void;
+}
+export declare class TestPoint {
+    life: number;
+    mesh: THREE.Mesh;
+    constructor(m: THREE.Mesh);
 }

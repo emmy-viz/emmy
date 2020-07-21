@@ -2,9 +2,12 @@ import * as math from 'mathjs'
     ;
 export class Func {
     expression: math.MathNode
+    compiled: math.EvalFunction
+
 
     constructor(expression: string) {
         this.expression = math.parse(expression);
+        this.compiled = math.compile(expression)
     }
 
     add(f: Func): Func {
@@ -28,6 +31,7 @@ export class Func {
     }
 
     evaluate(scope: object): number {
-        return this.expression.evaluate(scope)
+        return this.compiled.evaluate(scope)
+        // return this.expression.evaluate(scope)
     }
 }

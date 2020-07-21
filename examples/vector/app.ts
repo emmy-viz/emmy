@@ -5,7 +5,6 @@ import { Func } from "../../src/func"
 import { curl } from "../../src/operators"
 
 let canvas_add = document.getElementById("canvas_add") as HTMLCanvasElement
-
 var v = new viz.Viz(canvas_add);
 
 var origin = new Vector(0, 0, 0)

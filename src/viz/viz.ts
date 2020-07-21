@@ -11,8 +11,10 @@ export class Viz {
 
     renderer: THREE.Renderer
     controls: OrbitControls
-
     width: number
+
+    testPointCount: number
+    testPointE: VectorField
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas
@@ -42,7 +44,8 @@ export class Viz {
         this.controls.autoRotateSpeed = 5
         this.controls.autoRotate = true
 
-        this.drawGrid()
+        // this.drawGrid()
+        this.testPointCount = 1000
     }
 
     drawGrid() {
@@ -56,6 +59,16 @@ export class Viz {
         // gridHelper3.rotation.z += Math.PI / 2
         // this.scene.add(gridHelper, gridHelper2, gridHelper3);
         this.scene.add(gridHelper);
+    }
+
+    drawSphere(origin: Vector, color: number) {
+        let geometry = new THREE.SphereGeometry(.1);
+        var material = new THREE.MeshBasicMaterial({ color: color });
+        let mesh = new THREE.Mesh(geometry, material);
+        mesh.position.x = origin.x()
+        mesh.position.y = origin.y()
+        mesh.position.z = origin.z()
+        this.scene.add(mesh);
     }
 
     drawVector(origin, v: Vector, color?: number): THREE.ArrowHelper {
@@ -72,16 +85,22 @@ export class Viz {
         return arrowHelper
     }
 
-    drawVectorField(vf: VectorField, color?: number) {
+    drawVectorField(vf: VectorField, color?: number, widthScale?: number) {
         if (!color) {
             color = 0xff0000
         }
 
-        let skipCount = 3
+        if (!widthScale) {
+            widthScale = 1
+        }
+
+        let width = this.width / (2 * widthScale)
+
+        let skipCount = 1
         let maxValue = -100000000;
-        for (let x = -this.width / 2; x < this.width / 2; x += skipCount) {
-            for (let y = -this.width / 2; y < this.width / 2; y += skipCount) {
-                for (let z = -this.width / 2; z < this.width / 2; z += skipCount) {
+        for (let x = -width; x < width; x += skipCount) {
+            for (let y = -width; y < width; y += skipCount) {
+                for (let z = -width; z < width; z += skipCount) {
                     let v = vf.evaluate(x, y, z)
                     if (v.magnitude() > maxValue) {
                         maxValue = v.magnitude()
@@ -90,15 +109,63 @@ export class Viz {
             }
         }
 
-        for (let x = -this.width / 2; x < this.width / 2; x += skipCount) {
-            for (let y = -this.width / 2; y < this.width / 2; y += skipCount) {
-                for (let z = -this.width / 2; z < this.width / 2; z += skipCount) {
+        for (let x = -width; x < width; x += skipCount) {
+            for (let y = -width; y < width; y += skipCount) {
+                for (let z = -width; z < width; z += skipCount) {
                     let v = vf.evaluate(x, y, z)
+
+                    if (v.magnitude() / maxValue < .05) {
+                        continue
+                    }
+
                     let arrow = this.drawVector(new Vector(x, y, z), v.multiplyScalar(1 / maxValue), color)
                     arrow.scale.x = 5
                     arrow.scale.z = 5
-
                 }
+            }
+        }
+    }
+
+    drawTestPoints(E: VectorField) {
+        this.testPointE = E
+
+        var vertices = [];
+
+        for (var i = 0; i < this.testPointCount; i++) {
+            var x = THREE.MathUtils.randFloatSpread(this.width);
+            var y = THREE.MathUtils.randFloatSpread(this.width);
+            var z = THREE.MathUtils.randFloatSpread(this.width);
+
+            vertices.push(x, y, z);
+        }
+
+        var geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+        var material = new THREE.PointsMaterial({ color: 0xBB0000, size: .2 });
+
+        var points = new THREE.Points(geometry, material);
+        points.userData["type"] = "testPoint"
+        this.scene.add(points);
+    }
+
+    updateTestPoints() {
+        for (let c = 0; c < this.scene.children.length; c++) {
+            if (this.scene.children[c].userData["type"] == "testPoint") {
+                var positions = (this.scene.children[c] as THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial>).geometry.attributes.position;
+
+                for (let i = 0; i < positions.count; i++) {
+
+                    if (Math.random() < .01) {
+                        positions.setXYZ(i, THREE.MathUtils.randFloatSpread(this.width), THREE.MathUtils.randFloatSpread(this.width), THREE.MathUtils.randFloatSpread(this.width));
+                    }
+
+                    let p = new Vector(positions.getX(i), positions.getY(i), positions.getZ(i))
+                    let newP = p.add(this.testPointE.evaluate(p.x(), p.y(), p.z()).multiplyScalar(1))
+                    positions.setXYZ(i, newP.x(), newP.y(), newP.z());
+                }
+
+                positions['needsUpdate'] = true;
+
             }
         }
     }
@@ -106,6 +173,28 @@ export class Viz {
     animate() {
         requestAnimationFrame(() => this.animate());
         this.controls.update()
+
+        this.updateTestPoints()
+
         this.renderer.render(this.scene, this.camera);
+
     }
+}
+
+export class TestPoint {
+    life: number
+
+    mesh: THREE.Mesh
+
+    constructor(m: THREE.Mesh) {
+        this.mesh = m
+    }
+}
+
+function fromTHREEVector(v: THREE.Vector3): Vector {
+    return new Vector(v.x, v.y, v.z)
+}
+
+function toTHREEVector(v: Vector): THREE.Vector3 {
+    return new THREE.Vector3(v.x(), v.y(), v.z())
 }

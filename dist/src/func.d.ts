@@ -1,6 +1,7 @@
 import * as math from 'mathjs';
 export declare class Func {
     expression: math.MathNode;
+    compiled: math.EvalFunction;
     constructor(expression: string);
     add(f: Func): Func;
     sub(f: Func): Func;
