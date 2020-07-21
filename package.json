@@ -19,13 +19,19 @@
   "dependencies": {
     "@types/chai": "^4.2.11",
     "@types/mathjs": "^6.0.5",
+    "@types/three": "^0.103.2",
     "chai": "^4.2.0",
     "mathjs": "^7.1.0",
     "mathjs-simple-integral": "^0.1.1",
     "mocha": "^8.0.1",
+    "three": "^0.118.3",
+    "ts-loader": "^8.0.1",
     "ts-node": "^8.10.2",
     "tsc": "^1.20150623.0",
-    "typescript": "^3.9.7"
+    "typescript": "^3.9.7",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-server": "^3.11.0"
   },
   "devDependencies": {
     "@types/expect": "^24.3.0",
