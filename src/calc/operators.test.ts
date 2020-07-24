@@ -71,4 +71,12 @@ describe("operators", () => {
 
         expect(integrate_line(gradient(f), a, b)).to.closeTo(f.evaluate(b.toObject()) - f.evaluate(a.toObject()), .0001)
     })
+
+    it("should be able to help me with my homework", () => {
+        let vf1 = new VectorField(new Func("x y"), new Func("2 y z"), new Func("3 x z"))
+        let vf2 = new VectorField(new Func("y^2"), new Func("2 x y + z^2"), new Func("2 y z"))
+
+        // expect(curl(vf1).evaluate(5, 5, 5).magnitude()).to.eqls(0)
+        expect(curl(vf2).evaluate(5, 5, 5).magnitude()).to.eqls(0)
+    })
 })

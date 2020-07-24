@@ -7,14 +7,23 @@ export class Vector {
     }
 
     x(): number {
+        if (!Number.isFinite(this.d[0])) {
+            return 0
+        }
         return this.d[0]
     }
 
     y(): number {
+        if (!Number.isFinite(this.d[1])) {
+            return 0
+        }
         return this.d[1]
     }
 
     z(): number {
+        if (!Number.isFinite(this.d[2])) {
+            return 0
+        }
         return this.d[2];
     }
 

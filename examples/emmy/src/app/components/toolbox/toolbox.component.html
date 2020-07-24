@@ -1,0 +1,57 @@
+<div class="text-light p-1 m-0">
+    <!-- <a href="https://github.com/c0nrad/emmy" class="float-right">About</a> -->
+    <h5>Emmy</h5>
+
+
+    <div>
+        <span *ngFor="let tabName of tabNames">
+            <button (click)="currentTab = tabName" [class.btn-primary]="currentTab != tabName"
+                [class.btn-secondary]="currentTab == tabName" class="btn btn-sm btn-primary"
+                style="border-radius: 0 !important">{{tabName}}
+            </button>
+        </span>
+    </div>
+
+    <div class="bg-secondary">
+
+        <div *ngIf="currentTab == 'Components'">
+
+            <div *ngFor="let point of stateService.sim.points" style="border: 1px solid" class="mb-2">
+                {{point.name}}<br>
+
+                Position:
+                <div class="row">
+                    <div class="col">
+                        <input type="number" (input)="dirty()" [(ngModel)]="point.position.d[0]"
+                            class="form-control-sm form-control" placeholder="X">
+                    </div>
+                    <div class="col">
+                        <input type="number" (input)="dirty()" [(ngModel)]="point.position.d[1]"
+                            class="form-control-sm form-control" placeholder="Y">
+                    </div>
+
+                    <div class="col">
+                        <input type="number" (input)="dirty()" [(ngModel)]="point.position.d[2]"
+                            class="form-control-sm form-control" placeholder="Z">
+                    </div>
+                </div>
+
+                Charge:
+                <input type="number" [(ngModel)]="point.charge" (input)="dirty()" class=" form-control-sm form-control"
+                    placeholder="Z">
+
+            </div>
+
+        </div>
+
+        <div *ngIf="currentTab == 'Scene'">
+            Scene
+        </div>
+
+        <div *ngIf="currentTab == 'About'">
+            <p>Electromagnetism engine.</p>
+            <p>Source: <a href="https://github.com/c0nrad/emmy">Github</a></p>
+        </div>
+    </div>
+
+</div>

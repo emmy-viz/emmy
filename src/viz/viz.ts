@@ -1,8 +1,14 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import { Vector } from '../vector';
-import { VectorField } from '../vector_field';
+import * as  Stats from 'stats.js'
+import { Vector } from '../calc/vector';
+import { VectorField } from '../calc/vector_field';
+import { Simulation } from '../sim/sim';
+import { Point } from "../sim/shapes"
+
+let PositiveChargeColor = 0x0000FF
+let NegativeChargeColor = 0xFF0000
 
 export class Viz {
     camera: THREE.Camera
@@ -11,22 +17,28 @@ export class Viz {
 
     renderer: THREE.Renderer
     controls: OrbitControls
+    stats: Stats
+
     width: number
 
+    // scene
     testPointCount: number
-    testPointE: VectorField
+    sim: Simulation
 
-    constructor(canvas: HTMLCanvasElement) {
+
+    constructor(canvas: HTMLCanvasElement, sim: Simulation) {
         this.canvas = canvas
-        this.width = 20
+        this.sim = sim
+
+        this.width = 30
         this.init()
-        this.animate()
+        this.renderLoop()
     }
 
     init() {
         this.camera = new THREE.PerspectiveCamera(70, this.canvas.width / this.canvas.height, 0.01, 100);
-        this.camera.position.z = 10;
-        this.camera.position.y = 5;
+        this.camera.position.z = 20;
+        this.camera.position.y = 10;
 
         this.scene = new THREE.Scene();
 
@@ -37,15 +49,25 @@ export class Viz {
         // this.scene.add(mesh);
 
         this.renderer = new THREE.WebGLRenderer({ antialias: true, canvas: this.canvas });
-        this.renderer.setSize(this.canvas.width, this.canvas.height);
+        // this.renderer.setSize(this.canvas.width, this.canvas.height);
         // document.body.appendChild(this.renderer.domElement);
 
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
         this.controls.autoRotateSpeed = 5
         this.controls.autoRotate = true
 
-        // this.drawGrid()
+        this.drawGrid()
         this.testPointCount = 1000
+
+        this.stats = new Stats();
+        this.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+        document.body.appendChild(this.stats.dom);
+
+    }
+
+    resize(width, height: number) {
+        console.log('resize', width, height)
+        this.renderer.setSize(width, height);
     }
 
     drawGrid() {
@@ -59,6 +81,23 @@ export class Viz {
         // gridHelper3.rotation.z += Math.PI / 2
         // this.scene.add(gridHelper, gridHelper2, gridHelper3);
         this.scene.add(gridHelper);
+    }
+
+    addPoint(p: Point) {
+        let color = NegativeChargeColor
+        if (p.charge > 0) {
+            color = PositiveChargeColor
+        }
+
+        let geometry = new THREE.SphereGeometry(.1);
+        var material = new THREE.MeshBasicMaterial({ color: color });
+        let mesh = new THREE.Mesh(geometry, material);
+
+        mesh.position.x = p.position.x()
+        mesh.position.y = p.position.y()
+        mesh.position.z = p.position.z()
+        mesh.name = p.name
+        this.scene.add(mesh);
     }
 
     drawSphere(origin: Vector, color: number) {
@@ -126,9 +165,7 @@ export class Viz {
         }
     }
 
-    drawTestPoints(E: VectorField) {
-        this.testPointE = E
-
+    drawTestPoints() {
         var vertices = [];
 
         for (var i = 0; i < this.testPointCount; i++) {
@@ -149,6 +186,7 @@ export class Viz {
     }
 
     updateTestPoints() {
+        let eField = this.sim.E()
         for (let c = 0; c < this.scene.children.length; c++) {
             if (this.scene.children[c].userData["type"] == "testPoint") {
                 var positions = (this.scene.children[c] as THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial>).geometry.attributes.position;
@@ -160,7 +198,7 @@ export class Viz {
                     }
 
                     let p = new Vector(positions.getX(i), positions.getY(i), positions.getZ(i))
-                    let newP = p.add(this.testPointE.evaluate(p.x(), p.y(), p.z()).multiplyScalar(1))
+                    let newP = p.add(eField.evaluate(p.x(), p.y(), p.z()).multiplyScalar(1))
                     positions.setXYZ(i, newP.x(), newP.y(), newP.z());
                 }
 
@@ -170,31 +208,34 @@ export class Viz {
         }
     }
 
-    animate() {
-        requestAnimationFrame(() => this.animate());
+    renderLoop() {
+
+        this.stats.begin()
         this.controls.update()
+        this.animate()
+        this.renderer.render(this.scene, this.camera);
+
+        this.stats.end()
+
+        requestAnimationFrame(() => this.renderLoop());
+    }
+
+    animate() {
 
         this.updateTestPoints()
 
-        this.renderer.render(this.scene, this.camera);
 
+        for (let point of this.sim.points) {
+            let pointMesh = this.scene.getObjectByName(point.name)
+            if (!pointMesh) {
+                console.log("point doesn't exist")
+                this.addPoint(point)
+            } else {
+                pointMesh.position.x = point.position.x()
+                pointMesh.position.y = point.position.y()
+                pointMesh.position.z = point.position.z()
+                // pointMesh.position.x += .1
+            }
+        }
     }
-}
-
-export class TestPoint {
-    life: number
-
-    mesh: THREE.Mesh
-
-    constructor(m: THREE.Mesh) {
-        this.mesh = m
-    }
-}
-
-function fromTHREEVector(v: THREE.Vector3): Vector {
-    return new Vector(v.x, v.y, v.z)
-}
-
-function toTHREEVector(v: Vector): THREE.Vector3 {
-    return new THREE.Vector3(v.x(), v.y(), v.z())
 }

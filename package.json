@@ -19,11 +19,13 @@
   "dependencies": {
     "@types/chai": "^4.2.11",
     "@types/mathjs": "^6.0.5",
+    "@types/stats.js": "^0.17.0",
     "@types/three": "^0.103.2",
     "chai": "^4.2.0",
     "mathjs": "^7.1.0",
     "mathjs-simple-integral": "^0.1.1",
     "mocha": "^8.0.1",
+    "stats.js": "^0.17.0",
     "three": "^0.118.3",
     "ts-loader": "^8.0.1",
     "ts-node": "^8.10.2",

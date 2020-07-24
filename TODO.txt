@@ -1,0 +1,69 @@
+Component:
+    Shape:
+        Point
+        Sphere
+        Box
+        Cylinder
+        Plane
+
+        Coil
+        Wire
+        Field
+
+    Renderer:
+        Show Light?
+        Show equipotential?
+
+    charge?
+    position?
+    velocity?
+
+    rigid body?
+
+    constraints?
+
+    colider?
+
+chart?
+
+tools:
+    Curl
+    Divergence
+
+Sim:
+
+
+Viz:
+    Components
+    Scene
+    Inspector/Details
+    Play/Stop
+
+    Charts?
+    Collider?
+    Mesh?
+
+
+Viz Settings
+
+
+UI:
+    update()
+        -> callback -> sim;
+    
+
+
+
+
+
+Example Simulations
+* Dipole
+* Charges on a Sphere
+* Cycloid motion
+* E of different shapes 
+* Plane Capacitor
+* Trapped particle?
+* E field within Sphere
+* Line Charge?
+
+* Coil Gun?
