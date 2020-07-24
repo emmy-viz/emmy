@@ -52,6 +52,19 @@
             <p>Electromagnetism engine.</p>
             <p>Source: <a href="https://github.com/c0nrad/emmy">Github</a></p>
         </div>
+
+        <div *ngIf="currentTab == 'Examples'">
+            <div class="clearfix pb-2" *ngFor="let scene of this.sceneService.scenes">
+                <h4>{{scene.name}}</h4>
+                <a class="btn btn-sm btn-primary float-right" href="/?scene={{scene.name}}">Launch</a>
+                <p>{{scene.description}}</p>
+
+            </div>
+
+        </div>
+
+
+
     </div>
 
 </div>

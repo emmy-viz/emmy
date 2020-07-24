@@ -1,19 +1,20 @@
 import { Injectable } from '@angular/core';
-import { Viz } from "../../../../../src/viz/viz"
-import { Simulation } from "../../../../../src/sim/sim"
+import { Visualization } from "../../../../../src/visualization/visualization"
+import { Simulation } from "../../../../../src/simulation/simulation"
 import { Vector } from "../../../../../src/calc/vector"
 import { SceneService } from "./scene.service"
+import { ActivatedRoute } from '@angular/router';
 
 @Injectable({
   providedIn: 'root'
 })
 export class StateService {
 
-  viz: Viz
+  visualization: Visualization
   sim: Simulation
 
-  constructor(private sceneService: SceneService) {
-    this.viz = {} as Viz
+  constructor(private sceneService: SceneService, private route: ActivatedRoute) {
+    this.visualization = {} as Visualization
     this.sim = {} as Simulation
   }
 
@@ -22,10 +23,27 @@ export class StateService {
   }
 
   init() {
-    let canvas_dipole = document.getElementById("emmy_canvas") as HTMLCanvasElement
+    let canvas = document.getElementById("emmy_canvas") as HTMLCanvasElement
 
-    let s = this.sceneService.loadDipoleScene(canvas_dipole)
-    this.viz = s.viz
+    var urlParams = new URLSearchParams(window.location.search);
+    var sceneName = urlParams.get("scene")
+
+    if (sceneName == "" || !sceneName) {
+      sceneName = "dipole"
+    }
+
+    let s = this.sceneService.loadScene(sceneName, canvas)
+    this.visualization = s.visualization
+    this.sim = s.sim
+  }
+
+  load(name: string) {
+    let canvas = document.getElementById("emmy_canvas") as HTMLCanvasElement
+
+    this.visualization.destroy()
+
+    let s = this.sceneService.loadScene(name, canvas)
+    this.visualization = s.visualization
     this.sim = s.sim
   }
 }

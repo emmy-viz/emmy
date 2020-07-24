@@ -26,7 +26,7 @@ export class EditorComponent implements OnInit {
   ngAfterViewInit() {
     this.resize()
     this.stateService.init()
-    this.stateService.viz.resize(this.container.nativeElement.offsetWidth, this.container.nativeElement.offsetHeight)
+    this.stateService.visualization.resize(this.container.nativeElement.offsetWidth, this.container.nativeElement.offsetHeight)
   }
 
   resize(): void {

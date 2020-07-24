@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { Vector } from '../vector';
 import { VectorField } from '../vector_field';
-export declare class Viz {
+export declare class Visualization {
     camera: THREE.Camera;
     canvas: HTMLCanvasElement;
     scene: THREE.Scene;

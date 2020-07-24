@@ -4,16 +4,18 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import * as  Stats from 'stats.js'
 import { Vector } from '../calc/vector';
 import { VectorField } from '../calc/vector_field';
-import { Simulation } from '../sim/sim';
-import { Point } from "../sim/shapes"
+import { Simulation } from '../simulation/simulation';
+import { Point } from "../simulation/shapes"
 
 let PositiveChargeColor = 0x0000FF
 let NegativeChargeColor = 0xFF0000
 
-export class Viz {
+export class Visualization {
     camera: THREE.Camera
     canvas: HTMLCanvasElement
     scene: THREE.Scene
+
+    animationID: number
 
     renderer: THREE.Renderer
     controls: OrbitControls
@@ -217,13 +219,18 @@ export class Viz {
 
         this.stats.end()
 
-        requestAnimationFrame(() => this.renderLoop());
+        this.animationID = requestAnimationFrame(() => this.renderLoop());
+    }
+
+    destroy() {
+        cancelAnimationFrame(this.animationID);// Stop the animation
+        this.scene.dispose()
+
     }
 
     animate() {
 
         this.updateTestPoints()
-
 
         for (let point of this.sim.points) {
             let pointMesh = this.scene.getObjectByName(point.name)
