@@ -56,7 +56,8 @@
         <div *ngIf="currentTab == 'Examples'">
             <div class="clearfix pb-2" *ngFor="let scene of this.sceneService.scenes">
                 <h4>{{scene.name}}</h4>
-                <a class="btn btn-sm btn-primary float-right" href="?scene={{scene.name}}">Launch</a>
+                <a class="btn btn-sm btn-primary float-right"
+                    href="https://emmy-viz.github.io/emmy/?scene={{scene.name}}">Launch</a>
                 <p>{{scene.description}}</p>
 
             </div>
