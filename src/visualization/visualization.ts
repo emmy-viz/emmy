@@ -6,6 +6,7 @@ import { Vector } from '../calc/vector';
 import { VectorField } from '../calc/vector_field';
 import { Simulation } from '../simulation/simulation';
 import { Point } from "../simulation/shapes"
+import { ArrowHelper } from 'three';
 
 let PositiveChargeColor = 0x0000FF
 let NegativeChargeColor = 0xFF0000
@@ -23,10 +24,15 @@ export class Visualization {
 
     width: number
 
-    // scene
-    testPointCount: number
     sim: Simulation
 
+    // scene
+
+    isDrawGrid: boolean
+    isDrawETestPoints: boolean
+    testPointCount: number
+    isDrawEVectorField: boolean
+    isDrawEVectorLines: boolean
 
     constructor(canvas: HTMLCanvasElement, sim: Simulation) {
         this.canvas = canvas
@@ -58,7 +64,7 @@ export class Visualization {
         this.controls.autoRotateSpeed = 5
         this.controls.autoRotate = true
 
-        this.drawGrid()
+        // this.drawGrid()
         this.testPointCount = 1000
 
         this.stats = new Stats();
@@ -75,13 +81,8 @@ export class Visualization {
     drawGrid() {
         var size = this.width;
         var divisions = this.width;
-
         var gridHelper = new THREE.GridHelper(size, divisions);
-        // var gridHelper2 = new THREE.GridHelper(size, divisions);
-        // gridHelper2.rotation.x += Math.PI / 2
-        // var gridHelper3 = new THREE.GridHelper(size, divisions);
-        // gridHelper3.rotation.z += Math.PI / 2
-        // this.scene.add(gridHelper, gridHelper2, gridHelper3);
+        gridHelper.name = "grid"
         this.scene.add(gridHelper);
     }
 
@@ -112,7 +113,7 @@ export class Visualization {
         this.scene.add(mesh);
     }
 
-    drawVector(origin, v: Vector, color?: number): THREE.ArrowHelper {
+    renderVector(origin, v: Vector, color?: number): THREE.ArrowHelper {
         var unit = v.unit()
         var dir = new THREE.Vector3(unit.x(), unit.y(), unit.z());
         var length = v.magnitude();
@@ -122,7 +123,7 @@ export class Visualization {
         }
 
         var arrowHelper = new THREE.ArrowHelper(dir, new THREE.Vector3(origin.x(), origin.y(), origin.z()), length, color);
-        this.scene.add(arrowHelper);
+        // this.scene.add(arrowHelper);
         return arrowHelper
     }
 
@@ -150,20 +151,52 @@ export class Visualization {
             }
         }
 
+        var group = new THREE.Group()
         for (let x = -width; x < width; x += skipCount) {
             for (let y = -width; y < width; y += skipCount) {
                 for (let z = -width; z < width; z += skipCount) {
                     let v = vf.evaluate(x, y, z)
 
+
+                    let arrow = this.renderVector(new Vector(x, y, z), v.multiplyScalar(1 / maxValue), color)
+
                     if (v.magnitude() / maxValue < .05) {
-                        continue
+                        arrow.visible = false
                     }
 
-                    let arrow = this.drawVector(new Vector(x, y, z), v.multiplyScalar(1 / maxValue), color)
                     arrow.scale.x = 5
                     arrow.scale.z = 5
+                    group.add(arrow)
                 }
             }
+        }
+        group.name = "e_vector_field"
+        this.scene.add(group)
+    }
+
+    updateEVectorField() {
+        var vectorField = this.scene.getObjectByName("e_vector_field")
+        var eField = this.sim.E()
+
+        let maxValue = -100000000;
+        for (let a of vectorField.children) {
+            let p = new Vector(a.position.x, a.position.y, a.position.z)
+            let v = eField.evaluate(p.x(), p.y(), p.z())
+            if (v.magnitude() > maxValue) {
+                maxValue = v.magnitude()
+            }
+        }
+
+        for (let a of vectorField.children) {
+            let p = new Vector(a.position.x, a.position.y, a.position.z)
+            let v = eField.evaluate(p.x(), p.y(), p.z())
+
+            var unit = v.unit()
+            var dir = new THREE.Vector3(unit.x(), unit.y(), unit.z());
+            var length = v.magnitude() / (maxValue / 2);
+
+            (a as ArrowHelper).setDirection(dir);
+            (a as ArrowHelper).setLength(length)
         }
     }
 
@@ -184,30 +217,32 @@ export class Visualization {
 
         var points = new THREE.Points(geometry, material);
         points.userData["type"] = "testPoint"
+        points.name = "eTestPoints"
         this.scene.add(points);
     }
 
     updateTestPoints() {
-        let eField = this.sim.E()
-        for (let c = 0; c < this.scene.children.length; c++) {
-            if (this.scene.children[c].userData["type"] == "testPoint") {
-                var positions = (this.scene.children[c] as THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial>).geometry.attributes.position;
+        let testPoints = this.scene.getObjectByName("eTestPoints")
 
-                for (let i = 0; i < positions.count; i++) {
-
-                    if (Math.random() < .01) {
-                        positions.setXYZ(i, THREE.MathUtils.randFloatSpread(this.width), THREE.MathUtils.randFloatSpread(this.width), THREE.MathUtils.randFloatSpread(this.width));
-                    }
-
-                    let p = new Vector(positions.getX(i), positions.getY(i), positions.getZ(i))
-                    let newP = p.add(eField.evaluate(p.x(), p.y(), p.z()).multiplyScalar(1))
-                    positions.setXYZ(i, newP.x(), newP.y(), newP.z());
-                }
-
-                positions['needsUpdate'] = true;
-
-            }
+        if (!testPoints) {
+            return
         }
+        let positions = (testPoints as THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial>).geometry.attributes.position;
+
+        let eField = this.sim.E()
+        for (let i = 0; i < positions.count; i++) {
+
+            if (Math.random() < .01) {
+                positions.setXYZ(i, THREE.MathUtils.randFloatSpread(this.width), THREE.MathUtils.randFloatSpread(this.width), THREE.MathUtils.randFloatSpread(this.width));
+            }
+
+            let p = new Vector(positions.getX(i), positions.getY(i), positions.getZ(i))
+            let newP = p.add(eField.evaluate(p.x(), p.y(), p.z()))
+            positions.setXYZ(i, newP.x(), newP.y(), newP.z());
+        }
+
+        positions['needsUpdate'] = true;
+
     }
 
     renderLoop() {
@@ -216,6 +251,8 @@ export class Visualization {
         this.controls.update()
         this.animate()
         this.renderer.render(this.scene, this.camera);
+
+        this.sim.wasDirty = false
 
         this.stats.end()
 
@@ -230,19 +267,25 @@ export class Visualization {
 
     animate() {
 
+
+        if (this.isDrawGrid && !this.scene.getObjectByName("grid")) {
+            this.drawGrid()
+        } else if (!this.isDrawGrid && !!this.scene.getObjectByName("grid")) {
+            this.scene.remove(this.scene.getObjectByName("grid"))
+        }
+
+        if (this.isDrawEVectorField && !this.scene.getObjectByName("e_vector_field")) {
+            this.drawVectorField(this.sim.E())
+        } else if (!this.isDrawEVectorField && !!this.scene.getObjectByName("e_vector_field")) {
+            this.scene.remove(this.scene.getObjectByName("e_vector_field"))
+        }
+        if (this.isDrawEVectorField && this.sim.wasDirty) {
+            this.updateEVectorField()
+            // this.scene.remove(this.scene.getObjectByName("e_vector_field"))
+            // this.drawVectorField(this.sim.E())
+        }
+
         this.updateTestPoints()
 
-        for (let point of this.sim.points) {
-            let pointMesh = this.scene.getObjectByName(point.name)
-            if (!pointMesh) {
-                console.log("point doesn't exist")
-                this.addPoint(point)
-            } else {
-                pointMesh.position.x = point.position.x()
-                pointMesh.position.y = point.position.y()
-                pointMesh.position.z = point.position.z()
-                // pointMesh.position.x += .1
-            }
-        }
     }
 }

@@ -59,8 +59,8 @@ export class SceneService {
     var negative = new Vector(5, 5, 0)
     sim_dipole.addPoint(positive, 10)
     sim_dipole.addPoint(negative, -10)
-    visualization_dipole.drawTestPoints()
-
+    // visualization_dipole.drawTestPoints()
+    visualization_dipole.isDrawEVectorField = true
 
 
     let out = new Scene("dipole", description, visualization_dipole, sim_dipole)

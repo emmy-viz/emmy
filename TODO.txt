@@ -1,3 +1,10 @@
+Add vector lines
+Add light to point charge
+Add other shapes 
+Add tools for viewing quantities
+Play/Pause
+
+
 Component:
     Shape:
         Point
@@ -65,5 +72,4 @@ Example Simulations
 * Trapped particle?
 * E field within Sphere
 * Line Charge?
-
 * Coil Gun?

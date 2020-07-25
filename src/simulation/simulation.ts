@@ -9,6 +9,7 @@ export class Simulation {
 
     previousE: VectorField
     isDirty: boolean
+    wasDirty: boolean
 
     constructor() {
         this.points = []
@@ -26,6 +27,7 @@ export class Simulation {
         }
 
         this.isDirty = false
+        this.wasDirty = true
 
         let out = new VectorField(new Func("0"), new Func("0"), new Func('0'))
         for (let p of this.points) {
