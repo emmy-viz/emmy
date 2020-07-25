@@ -19,6 +19,7 @@ export class Simulation {
     addPoint(position: Vector, q: number) {
         this.points.push(new Point(position, q))
         this.isDirty = true
+        this.wasDirty = true
     }
 
     E(): VectorField {
