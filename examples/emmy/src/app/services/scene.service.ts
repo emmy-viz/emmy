@@ -61,7 +61,9 @@ export class SceneService {
     sim_dipole.addPoint(negative, -10)
     // visualization_dipole.drawTestPoints()
     visualization_dipole.isDrawEVectorField = true
+    visualization_dipole.isDrawETestPoints = true
 
+    visualization_dipole.drawEFieldLines()
 
     let out = new Scene("dipole", description, visualization_dipole, sim_dipole)
     return out

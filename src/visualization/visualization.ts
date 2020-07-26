@@ -51,7 +51,7 @@ export class Visualization {
     isDrawETestPoints: boolean
     testPointCount: number
     isDrawEVectorField: boolean
-    isDrawEVectorLines: boolean
+    isDrawEFieldLines: boolean
 
     constructor(canvas: HTMLCanvasElement, sim: Simulation) {
         this.canvas = canvas
@@ -121,7 +121,8 @@ export class Visualization {
         this.scene.add(mesh);
     }
 
-    drawVectorField(vf: VectorField) {
+    drawVectorField() {
+        let vf = this.sim.E()
 
         let width = this.width / 2
 
@@ -166,30 +167,49 @@ export class Visualization {
             }
         }
 
-        var geometry = new THREE.BufferGeometry().setFromPoints(points);
-        var material = new THREE.LineBasicMaterial({ color: 0xFF0000, linewidth: 10 });
-        var line = new THREE.LineSegments(geometry, material);
-        line.name = "e_vector_field"
-        this.scene.add(line)
+        var lineObject = this.scene.getObjectByName("e_vector_field")
+        if (!lineObject) {
+            var geometry = new THREE.BufferGeometry().setFromPoints(points);
+            var material = new THREE.LineBasicMaterial({ color: 0xFF0000, linewidth: 10 });
+            lineObject = new THREE.LineSegments(geometry, material);
+            lineObject.name = "e_vector_field"
+            this.scene.add(lineObject)
+        } else {
+            let positions = (lineObject as THREE.Points<THREE.BufferGeometry, THREE.LineBasicMaterial>);
+            positions.geometry.setFromPoints(points)
+            // positions.geometry.setAttribute("position", new THREE.Vect(points, 3));
+            // positions.geometry["position"]["needsUpdate"] = true
+        }
 
+        var endObject = this.scene.getObjectByName("e_vector_field_ends")
+        if (!endObject) {
+            let uniforms = {
+                color: { value: new THREE.Color(0xff0000) },
+            };
 
-        let uniforms = {
-            color: { value: new THREE.Color(0xff0000) },
-        };
+            // point cloud material
+            var shaderMaterial = new THREE.ShaderMaterial({
+                uniforms: uniforms,
+                vertexShader: vertexShader,
+                fragmentShader: fragmentShader,
+                transparent: true,
+            });
 
-        // point cloud material
-        var shaderMaterial = new THREE.ShaderMaterial({
-            uniforms: uniforms,
-            vertexShader: vertexShader,
-            fragmentShader: fragmentShader,
-            transparent: true,
-        });
+            var geometry = new THREE.BufferGeometry().setFromPoints(ends);
+            geometry.setAttribute('alpha', new THREE.Float32BufferAttribute(alphas, 1));
+            endObject = new THREE.Points(geometry, shaderMaterial);
+            endObject.name = "e_vector_field_ends"
+            this.scene.add(endObject);
+        } else {
+            let endPositions = (endObject as THREE.Points<THREE.BufferGeometry, THREE.LineBasicMaterial>);
 
-        var geometry = new THREE.BufferGeometry().setFromPoints(ends);
-        geometry.setAttribute('alpha', new THREE.Float32BufferAttribute(alphas, 1));
-        var endsPoint = new THREE.Points(geometry, shaderMaterial);
-        endsPoint.name = "e_vector_field_ends"
-        this.scene.add(endsPoint);
+            endPositions.geometry.setFromPoints(ends)
+            // endPositions.geometry.setAttribute("position", new THREE.Float32BufferAttribute(ends, 3))
+            // endPositions.geometry["positions"]['needsUpdate'] = true;
+            endPositions.geometry.setAttribute('alpha', new THREE.Float32BufferAttribute(alphas, 1));
+            // endPositions.geometry["alpha"]['needsUpdate'] = true;
+
+        }
     }
 
     updateEVectorField() {
@@ -290,8 +310,59 @@ export class Visualization {
         }
 
         positions['needsUpdate'] = true;
-
     }
+
+    drawEFieldLines() {
+        var eField = this.sim.E()
+
+        let max_steps = 1000;
+        let start = new Vector(-5, 5, 0)
+        let end = new Vector(5, 5, 0)
+
+
+
+        let startOffsets = [
+
+        ]
+
+        let totalPhi = 4
+        let totalTheta = 4
+        for (let p = 0; p < totalPhi; p++) {
+            for (let t = 0; t < totalTheta; t++) {
+                let s = new THREE.Spherical(.1, Math.PI * p / totalPhi, Math.PI * 2 * t / totalTheta)
+                let v = new THREE.Vector3(0, 0, 0).setFromSpherical(s)
+                startOffsets.push(new Vector(v.x, v.y, v.z))
+            }
+        }
+
+        for (let i = 0; i < 10; i++) {
+            startOffsets.push(
+                new Vector(THREE.MathUtils.randFloatSpread(.2), THREE.MathUtils.randFloatSpread(.2), THREE.MathUtils.randFloatSpread(.2))
+            )
+        }
+
+        for (let offset of startOffsets) {
+            let curr = start.add(offset)
+            let step = 0
+            var points = [];
+            points.push(new THREE.Vector3(start.x(), start.y(), start.z()))
+            while (curr.sub(end).magnitude() > .1 && step < max_steps) {
+                let deltaCurr = eField.evaluate(curr.x(), curr.y(), curr.z())
+                curr = curr.add(deltaCurr.unit().multiplyScalar(.5))
+                points.push(new THREE.Vector3(curr.x(), curr.y(), curr.z()))
+                console.log(curr)
+                step++
+            }
+
+            //create a blue LineBasicMaterial
+            var material = new THREE.LineBasicMaterial({ color: 0x0000ff });
+            var geometry = new THREE.BufferGeometry().setFromPoints(points);
+
+            var line = new THREE.Line(geometry, material);
+            this.scene.add(line)
+        }
+    }
+
 
     renderLoop() {
 
@@ -322,15 +393,21 @@ export class Visualization {
         }
 
         if (this.isDrawEVectorField && !this.scene.getObjectByName("e_vector_field")) {
-            this.drawVectorField(this.sim.E())
+            this.drawVectorField()
         } else if (!this.isDrawEVectorField && !!this.scene.getObjectByName("e_vector_field")) {
             this.scene.remove(this.scene.getObjectByName("e_vector_field"))
             this.scene.remove(this.scene.getObjectByName("e_vector_field_ends"))
 
         } else if (this.isDrawEVectorField && (this.sim.wasDirty || this.sim.isDirty)) {
-            this.updateEVectorField()
-            // this.scene.remove(this.scene.getObjectByName("e_vector_field"))
-            // this.drawVectorField(this.sim.E())
+            this.drawVectorField()
+        }
+
+        if (this.isDrawETestPoints && !this.scene.getObjectByName("eTestPoints")) {
+            this.drawTestPoints()
+        } else if (!this.isDrawETestPoints && !!this.scene.getObjectByName("eTestPoints")) {
+            this.scene.remove(this.scene.getObjectByName("eTestPoints"))
+        } else if (this.isDrawETestPoints) {
+            this.updateTestPoints()
         }
 
         this.updateTestPoints()

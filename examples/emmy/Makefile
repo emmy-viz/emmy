@@ -6,6 +6,4 @@ build:
 	mv dist/emmy/* ../../docs
 
 deploy: build
-	git add -A .
-	git commit -m "release"
-	git push origin master
+	cd ../..; git add -A .;	git commit -m "release"; git push origin master
