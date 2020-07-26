@@ -57,7 +57,7 @@ export class Visualization {
         this.canvas = canvas
         this.sim = sim
 
-        this.testPointCount = 1000
+        this.testPointCount = 500
 
         this.width = 20
         this.init()
@@ -100,7 +100,7 @@ export class Visualization {
             color = PositiveChargeColor
         }
 
-        let geometry = new THREE.SphereGeometry(.1);
+        let geometry = new THREE.SphereGeometry(.3);
         var material = new THREE.MeshBasicMaterial({ color: color });
         let mesh = new THREE.Mesh(geometry, material);
 
@@ -128,10 +128,16 @@ export class Visualization {
 
         let skipCount = 1
         let maxValue = -100000000;
+        let evaluations: number[][][]
+
+        evaluations = []
         for (let x = -width; x < width; x += skipCount) {
+            evaluations[x] = new Array()
             for (let y = -width; y < width; y += skipCount) {
+                evaluations[x][y] = new Array()
                 for (let z = -width; z < width; z += skipCount) {
                     let v = vf.evaluate(x, y, z)
+                    evaluations[x][y][z]
                     if (v.magnitude() > maxValue) {
                         maxValue = v.magnitude()
                     }
@@ -204,68 +210,8 @@ export class Visualization {
             let endPositions = (endObject as THREE.Points<THREE.BufferGeometry, THREE.LineBasicMaterial>);
 
             endPositions.geometry.setFromPoints(ends)
-            // endPositions.geometry.setAttribute("position", new THREE.Float32BufferAttribute(ends, 3))
-            // endPositions.geometry["positions"]['needsUpdate'] = true;
             endPositions.geometry.setAttribute('alpha', new THREE.Float32BufferAttribute(alphas, 1));
-            // endPositions.geometry["alpha"]['needsUpdate'] = true;
-
         }
-    }
-
-    updateEVectorField() {
-        var lineObject = this.scene.getObjectByName("e_vector_field")
-        if (!lineObject) {
-            console.log("There is no vector field to update!")
-            return
-        }
-
-        var endObject = this.scene.getObjectByName("e_vector_field_ends")
-        if (!endObject) {
-            console.log("SKIPP")
-            return
-        }
-
-        var eField = this.sim.E()
-
-        let positions = (lineObject as THREE.Points<THREE.BufferGeometry, THREE.LineBasicMaterial>).geometry.attributes.position;
-        let endPositions = (endObject as THREE.Points<THREE.BufferGeometry, THREE.ShaderMaterial>).geometry.attributes.position;
-        let endAlphas = (endObject as THREE.Points<THREE.BufferGeometry, THREE.ShaderMaterial>).geometry.attributes.alpha;
-
-        if (!endPositions) {
-            alert("done")
-        }
-
-        let maxValue = -100000000;
-        for (let i = 0; i < positions.count; i += 2) {
-            let p = new Vector(positions.getX(i), positions.getY(i), positions.getZ(i))
-            let v = eField.evaluate(p.x(), p.y(), p.z())
-            if (v.magnitude() > maxValue) {
-                maxValue = v.magnitude()
-            }
-        }
-
-        for (let i = 0; i < positions.count; i += 2) {
-            let p = new Vector(positions.getX(i), positions.getY(i), positions.getZ(i))
-            // let v = eField.evaluate(p.x(), p.y(), p.z())
-            let v = eField.evaluate(p.x(), p.y(), p.z()).multiplyScalar(1 / maxValue)
-
-            positions.setX(i + 1, p.x() + v.x())
-            positions.setY(i + 1, p.y() + v.y())
-            positions.setZ(i + 1, p.z() + v.z())
-            endPositions.setX(i / 2, p.x() + v.x())
-            endPositions.setY(i / 2, p.y() + v.y())
-            endPositions.setZ(i / 2, p.z() + v.z())
-
-            if (v.magnitude() < .05) {
-                endAlphas.setX(i / 2, 0)
-            } else {
-                endAlphas.setX(i / 2, 2 * v.magnitude())
-            }
-        }
-
-        endPositions['needsUpdate'] = true;
-        positions['needsUpdate'] = true;
-        endAlphas['needsUpdate'] = true
     }
 
     drawTestPoints() {
@@ -285,12 +231,12 @@ export class Visualization {
 
         var points = new THREE.Points(geometry, material);
         points.userData["type"] = "testPoint"
-        points.name = "eTestPoints"
+        points.name = "e_test_points"
         this.scene.add(points);
     }
 
     updateTestPoints() {
-        let testPoints = this.scene.getObjectByName("eTestPoints")
+        let testPoints = this.scene.getObjectByName("e_test_points")
 
         if (!testPoints) {
             return
@@ -315,54 +261,54 @@ export class Visualization {
     drawEFieldLines() {
         var eField = this.sim.E()
 
-        let max_steps = 1000;
-        let start = new Vector(-5, 5, 0)
-        let end = new Vector(5, 5, 0)
+        let max_steps = 400;
+        let group = new THREE.Group()
 
+        for (let p of this.sim.positiveObjects()) {
+            let start = p.position;
+            let startOffsets = []
 
-
-        let startOffsets = [
-
-        ]
-
-        let totalPhi = 4
-        let totalTheta = 4
-        for (let p = 0; p < totalPhi; p++) {
-            for (let t = 0; t < totalTheta; t++) {
-                let s = new THREE.Spherical(.1, Math.PI * p / totalPhi, Math.PI * 2 * t / totalTheta)
-                let v = new THREE.Vector3(0, 0, 0).setFromSpherical(s)
-                startOffsets.push(new Vector(v.x, v.y, v.z))
-            }
-        }
-
-        for (let i = 0; i < 10; i++) {
-            startOffsets.push(
-                new Vector(THREE.MathUtils.randFloatSpread(.2), THREE.MathUtils.randFloatSpread(.2), THREE.MathUtils.randFloatSpread(.2))
-            )
-        }
-
-        for (let offset of startOffsets) {
-            let curr = start.add(offset)
-            let step = 0
-            var points = [];
-            points.push(new THREE.Vector3(start.x(), start.y(), start.z()))
-            while (curr.sub(end).magnitude() > .1 && step < max_steps) {
-                let deltaCurr = eField.evaluate(curr.x(), curr.y(), curr.z())
-                curr = curr.add(deltaCurr.unit().multiplyScalar(.5))
-                points.push(new THREE.Vector3(curr.x(), curr.y(), curr.z()))
-                console.log(curr)
-                step++
+            let totalPhi = 4
+            let totalTheta = 4
+            for (let p = 0; p < totalPhi; p++) {
+                for (let t = 0; t < totalTheta; t++) {
+                    let s = new THREE.Spherical(.1, Math.PI * p / totalPhi, Math.PI * 2 * t / totalTheta)
+                    let v = new THREE.Vector3(0, 0, 0).setFromSpherical(s)
+                    startOffsets.push(new Vector(v.x, v.y, v.z))
+                }
             }
 
-            //create a blue LineBasicMaterial
-            var material = new THREE.LineBasicMaterial({ color: 0x0000ff });
-            var geometry = new THREE.BufferGeometry().setFromPoints(points);
+            for (let i = 0; i < 5; i++) {
+                startOffsets.push(
+                    new Vector(THREE.MathUtils.randFloatSpread(.2), THREE.MathUtils.randFloatSpread(.2), THREE.MathUtils.randFloatSpread(.2))
+                )
+            }
 
-            var line = new THREE.Line(geometry, material);
-            this.scene.add(line)
+            for (let offset of startOffsets) {
+                let curr = start.add(offset)
+                let step = 0
+                var points = [];
+                points.push(new THREE.Vector3(start.x(), start.y(), start.z()))
+                while (step < max_steps) {
+                    let deltaCurr = eField.evaluate(curr.x(), curr.y(), curr.z())
+                    if (deltaCurr.magnitude() < .001) {
+                        break
+                    }
+                    curr = curr.add(deltaCurr.unit().multiplyScalar(.5))
+                    points.push(new THREE.Vector3(curr.x(), curr.y(), curr.z()))
+                    step++
+                }
+
+                var material = new THREE.LineBasicMaterial({ color: 0xff0000 });
+                var geometry = new THREE.BufferGeometry().setFromPoints(points);
+
+                var line = new THREE.Line(geometry, material);
+                group.add(line)
+            }
         }
+        group.name = "e_field_lines"
+        this.scene.add(group)
     }
-
 
     renderLoop() {
 
@@ -384,8 +330,6 @@ export class Visualization {
     }
 
     animate() {
-
-
         if (this.isDrawGrid && !this.scene.getObjectByName("grid")) {
             this.drawGrid()
         } else if (!this.isDrawGrid && !!this.scene.getObjectByName("grid")) {
@@ -397,20 +341,27 @@ export class Visualization {
         } else if (!this.isDrawEVectorField && !!this.scene.getObjectByName("e_vector_field")) {
             this.scene.remove(this.scene.getObjectByName("e_vector_field"))
             this.scene.remove(this.scene.getObjectByName("e_vector_field_ends"))
-
         } else if (this.isDrawEVectorField && (this.sim.wasDirty || this.sim.isDirty)) {
             this.drawVectorField()
         }
 
-        if (this.isDrawETestPoints && !this.scene.getObjectByName("eTestPoints")) {
+        if (this.isDrawETestPoints && !this.scene.getObjectByName("e_test_points")) {
             this.drawTestPoints()
-        } else if (!this.isDrawETestPoints && !!this.scene.getObjectByName("eTestPoints")) {
-            this.scene.remove(this.scene.getObjectByName("eTestPoints"))
+        } else if (!this.isDrawETestPoints && !!this.scene.getObjectByName("e_test_points")) {
+            this.scene.remove(this.scene.getObjectByName("e_test_points"))
         } else if (this.isDrawETestPoints) {
             this.updateTestPoints()
         }
 
-        this.updateTestPoints()
+        if (this.isDrawEFieldLines && !this.scene.getObjectByName("e_field_lines")) {
+            this.drawEFieldLines()
+        } else if (!this.isDrawEFieldLines && !!this.scene.getObjectByName("e_field_lines")) {
+            this.scene.remove(this.scene.getObjectByName("e_field_lines"))
+        } else if (this.isDrawEFieldLines && (this.sim.wasDirty || this.sim.isDirty)) {
+            console.log("REMOVE")
+            this.scene.remove(this.scene.getObjectByName("e_field_lines"))
+        }
+
         for (let point of this.sim.points) {
             let pointMesh = this.scene.getObjectByName(point.name)
             if (!pointMesh) {
@@ -420,10 +371,7 @@ export class Visualization {
                 pointMesh.position.x = point.position.x()
                 pointMesh.position.y = point.position.y()
                 pointMesh.position.z = point.position.z()
-                // pointMesh.position.x += .1
             }
         }
-
-
     }
 }

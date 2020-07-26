@@ -4,7 +4,6 @@ Add other shapes
 Add tools for viewing quantities
 Play/Pause
 
-
 Component:
     Shape:
         Point

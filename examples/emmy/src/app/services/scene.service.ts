@@ -22,7 +22,8 @@ export class SceneService {
 
   scenes = [
     new Scene("blank", "A blank canvas.", null, null),
-    new Scene("dipole", "A static positive and negative charge.", null, null)
+    new Scene("dipole", "A static positive and negative charge.", null, null),
+    new Scene("trap", "A particle trapped in a box of charges", null, null)
   ]
 
   constructor() {
@@ -32,6 +33,10 @@ export class SceneService {
 
     if (name == "dipole") {
       return this.loadDipoleScene(c)
+    }
+
+    if (name == "trap") {
+      return this.loadBoxTrap(c)
     }
 
     if (name == "blank") {
@@ -63,11 +68,31 @@ export class SceneService {
     visualization_dipole.isDrawEVectorField = true
     visualization_dipole.isDrawETestPoints = true
 
-    visualization_dipole.drawEFieldLines()
+    // visualization_dipole.drawEFieldLines()
 
     let out = new Scene("dipole", description, visualization_dipole, sim_dipole)
     return out
   }
+
+  loadBoxTrap(c: HTMLCanvasElement): Scene {
+    let sim_trap = new Simulation()
+    let visualization = new Visualization(c, sim_trap)
+    let description = "A particle trapped in a box of charges"
+
+    sim_trap.addPoint(new Vector(5, 5, 5), 10)
+    sim_trap.addPoint(new Vector(5, 5, -5), 10)
+    sim_trap.addPoint(new Vector(5, -5, 5), 10)
+    sim_trap.addPoint(new Vector(5, -5, -5), 10)
+    sim_trap.addPoint(new Vector(-5, 5, 5), 10)
+    sim_trap.addPoint(new Vector(-5, 5, -5), 10)
+    sim_trap.addPoint(new Vector(-5, -5, 5), 10)
+    sim_trap.addPoint(new Vector(-5, -5, -5), 10)
+
+    sim_trap.addPoint(new Vector(0, 0, 0), 10)
+
+    visualization.isDrawEFieldLines = true
+
+    let out = new Scene("trap", description, visualization, sim_trap)
+    return out
+  }
 }
-
-

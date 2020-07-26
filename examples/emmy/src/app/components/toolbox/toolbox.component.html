@@ -66,12 +66,14 @@
             </div>
 
 
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input"
+                    [(ngModel)]="stateService.visualization.isDrawEFieldLines">
+                <label class="form-check-label">Show Electric Field Lines</label>
+            </div>
 
-            isDrawGrid: boolean
-            isDrawETestPoints: boolean
-            testPointCount: number
-            isDrawEVectors: boolean
-            isDrawEVectorLines: boolean
+
+
 
 
         </div>
@@ -84,8 +86,7 @@
         <div *ngIf="currentTab == 'Examples'">
             <div class="clearfix pb-2" *ngFor="let scene of this.sceneService.scenes">
                 <h4>{{scene.name}}</h4>
-                <a class="btn btn-sm btn-primary float-right"
-                    href="https://emmy-viz.github.io/emmy/?scene={{scene.name}}">Launch</a>
+                <a class="btn btn-sm btn-primary float-right" href="?scene={{scene.name}}">Launch</a>
                 <p>{{scene.description}}</p>
 
             </div>

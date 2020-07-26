@@ -37,4 +37,15 @@ export class Simulation {
         this.previousE = out
         return out
     }
+
+    positiveObjects(): Point[] {
+        let out = []
+        for (let p of this.points) {
+            if (p.charge > 0) {
+                out.push(p)
+            }
+        }
+        return out
+    }
+
 }

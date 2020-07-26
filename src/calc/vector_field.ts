@@ -20,9 +20,17 @@ export class VectorField {
         return this.d[2]
     }
 
+    evaluateMemo = {}
     evaluate(x: number, y: number, z: number): Vector {
+        let key = "" + x + "," + y + "," + z
         let scope = { x: x, y: y, z: z }
-        return new Vector(this.d[0].evaluate(scope), this.d[1].evaluate(scope), this.d[2].evaluate(scope))
+        if (key in this.evaluateMemo) {
+            return this.evaluateMemo[key]
+        }
+
+        let solution = new Vector(this.d[0].evaluate(scope), this.d[1].evaluate(scope), this.d[2].evaluate(scope))
+        this.evaluateMemo[key] = solution
+        return solution
     }
 
     multiply(f: Func): VectorField {
