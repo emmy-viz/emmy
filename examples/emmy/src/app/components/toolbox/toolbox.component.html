@@ -36,11 +36,57 @@
                     </div>
                 </div>
 
+                Velocity:
+                <div class="row">
+                    <div class="col">
+                        <input type="number" (input)="dirty()" [(ngModel)]="point.velocity.d[0]"
+                            class="form-control-sm form-control" placeholder="X">
+                    </div>
+                    <div class="col">
+                        <input type="number" (input)="dirty()" [(ngModel)]="point.velocity.d[1]"
+                            class="form-control-sm form-control" placeholder="Y">
+                    </div>
+
+                    <div class="col">
+                        <input type="number" (input)="dirty()" [(ngModel)]="point.velocity.d[2]"
+                            class="form-control-sm form-control" placeholder="Z">
+                    </div>
+                </div>
+
                 Charge:
                 <input type="number" [(ngModel)]="point.charge" (input)="dirty()" class=" form-control-sm form-control"
                     placeholder="Z">
 
+                Mass:
+                <input type="number" [(ngModel)]="point.mass" (input)="dirty()" class=" form-control-sm form-control"
+                    placeholder="Z">
+
+                Previous Force:
+                <div class="row">
+                    <div class="col">
+                        <input type="number" (input)="dirty()" [(ngModel)]="point.force.d[0]"
+                            class="form-control-sm form-control" placeholder="X">
+                    </div>
+                    <div class="col">
+                        <input type="number" (input)="dirty()" [(ngModel)]="point.force.d[1]"
+                            class="form-control-sm form-control" placeholder="Y">
+                    </div>
+
+                    <div class="col">
+                        <input type="number" (input)="dirty()" [(ngModel)]="point.force.d[2]"
+                            class="form-control-sm form-control" placeholder="Z">
+                    </div>
+                </div>
+
             </div>
+
+            <button (click)="stateService.sim.isActive = true" *ngIf="!stateService.sim.isActive"
+                class="btn btn-primary">Play</button>
+            <button (click)="stateService.sim.isActive = false" *ngIf="stateService.sim.isActive"
+                class="btn btn-primary">Pause</button>
+            <p>Step: {{stateService.sim.stepNumber}}</p>
+            <button (click)="stateService.init()" class="btn btn-danger">Reset</button>
+
 
         </div>
 

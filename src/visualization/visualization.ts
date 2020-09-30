@@ -18,7 +18,7 @@ varying float vAlpha;
 void main() {
     vAlpha = alpha;
     vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
-    gl_PointSize = 4.0;
+    gl_PointSize = 2.0;
     gl_Position = projectionMatrix * mvPosition;
 }`
 
@@ -46,12 +46,16 @@ export class Visualization {
     sim: Simulation
 
     // scene
-
     isDrawGrid: boolean
     isDrawETestPoints: boolean
     testPointCount: number
+
     isDrawEVectorField: boolean
+    isDrawBVectorField: boolean
+
     isDrawEFieldLines: boolean
+
+    isRotateScene: boolean
 
     constructor(canvas: HTMLCanvasElement, sim: Simulation) {
         this.canvas = canvas
@@ -62,12 +66,13 @@ export class Visualization {
         this.width = 20
         this.init()
         this.renderLoop()
+        this.isRotateScene = true
     }
 
     init() {
         this.camera = new THREE.PerspectiveCamera(70, this.canvas.width / this.canvas.height, 0.01, 100);
-        this.camera.position.z = 20;
-        this.camera.position.y = 10;
+        this.camera.position.z = 10;
+        this.camera.position.y = 1;
 
         this.scene = new THREE.Scene();
         this.renderer = new THREE.WebGLRenderer({ antialias: true, canvas: this.canvas });
@@ -121,12 +126,11 @@ export class Visualization {
         this.scene.add(mesh);
     }
 
-    drawVectorField() {
-        let vf = this.sim.E()
+    drawVectorField(vf: VectorField, color: number = 0xFF0000, name: string = "e_field", scale: number = 1) {
 
         let width = this.width / 2
 
-        let skipCount = 1
+        let skipCount = 3
         let maxValue = -100000000;
         let evaluations: number[][][]
 
@@ -145,6 +149,10 @@ export class Visualization {
             }
         }
 
+        if (maxValue == 0) {
+            return
+        }
+
         var points = [];
         var ends = [];
         var alphas = []
@@ -152,7 +160,7 @@ export class Visualization {
             for (let y = -width; y < width; y += skipCount) {
                 for (let z = -width; z < width; z += skipCount) {
                     let v = vf.evaluate(x, y, z)
-                    let vScaled = v.multiplyScalar(1 / maxValue)
+                    let vScaled = v.multiplyScalar(1 / maxValue).multiplyScalar(scale)
 
                     if (vScaled.magnitude() > .05) {
                         points.push(new THREE.Vector3(x, y, z));
@@ -173,12 +181,12 @@ export class Visualization {
             }
         }
 
-        var lineObject = this.scene.getObjectByName("e_vector_field")
+        var lineObject = this.scene.getObjectByName(name)
         if (!lineObject) {
             var geometry = new THREE.BufferGeometry().setFromPoints(points);
-            var material = new THREE.LineBasicMaterial({ color: 0xFF0000, linewidth: 10 });
+            var material = new THREE.LineBasicMaterial({ color: color, linewidth: 10 });
             lineObject = new THREE.LineSegments(geometry, material);
-            lineObject.name = "e_vector_field"
+            lineObject.name = name
             this.scene.add(lineObject)
         } else {
             let positions = (lineObject as THREE.Points<THREE.BufferGeometry, THREE.LineBasicMaterial>);
@@ -187,10 +195,10 @@ export class Visualization {
             // positions.geometry["position"]["needsUpdate"] = true
         }
 
-        var endObject = this.scene.getObjectByName("e_vector_field_ends")
+        var endObject = this.scene.getObjectByName(name + "_ends")
         if (!endObject) {
             let uniforms = {
-                color: { value: new THREE.Color(0xff0000) },
+                color: { value: new THREE.Color(color) },
             };
 
             // point cloud material
@@ -204,7 +212,7 @@ export class Visualization {
             var geometry = new THREE.BufferGeometry().setFromPoints(ends);
             geometry.setAttribute('alpha', new THREE.Float32BufferAttribute(alphas, 1));
             endObject = new THREE.Points(geometry, shaderMaterial);
-            endObject.name = "e_vector_field_ends"
+            endObject.name = name + "_ends"
             this.scene.add(endObject);
         } else {
             let endPositions = (endObject as THREE.Points<THREE.BufferGeometry, THREE.LineBasicMaterial>);
@@ -313,13 +321,19 @@ export class Visualization {
     renderLoop() {
 
         this.stats.begin()
-        this.controls.update()
+        if (this.isRotateScene) {
+            this.controls.update()
+        }
         this.animate()
         this.renderer.render(this.scene, this.camera);
 
         this.sim.wasDirty = false
 
         this.stats.end()
+
+        if (this.sim.isActive) {
+            this.sim.step(1 / 60)
+        }
 
         this.animationID = requestAnimationFrame(() => this.renderLoop());
     }
@@ -337,13 +351,23 @@ export class Visualization {
         }
 
         if (this.isDrawEVectorField && !this.scene.getObjectByName("e_vector_field")) {
-            this.drawVectorField()
+            this.drawVectorField(this.sim.E_static(), 0xFF0000, "e_vector_field", .3)
         } else if (!this.isDrawEVectorField && !!this.scene.getObjectByName("e_vector_field")) {
             this.scene.remove(this.scene.getObjectByName("e_vector_field"))
             this.scene.remove(this.scene.getObjectByName("e_vector_field_ends"))
         } else if (this.isDrawEVectorField && (this.sim.wasDirty || this.sim.isDirty)) {
-            this.drawVectorField()
+            this.drawVectorField(this.sim.E_static(), 0xFF0000, "e_vector_field", .3)
         }
+
+        if (this.isDrawBVectorField && !this.scene.getObjectByName("b_vector_field")) {
+            this.drawVectorField(this.sim.B_static(), 0x0000FF, "b_vector_field", .5)
+        } else if (!this.isDrawBVectorField && !!this.scene.getObjectByName("b_vector_field")) {
+            this.scene.remove(this.scene.getObjectByName("b_vector_field"))
+            this.scene.remove(this.scene.getObjectByName("b_vector_field_ends"))
+        } else if (this.isDrawBVectorField && (this.sim.wasDirty || this.sim.isDirty)) {
+            this.drawVectorField(this.sim.B_static(), 0x0000FF, "b_vector_field", .5)
+        }
+
 
         if (this.isDrawETestPoints && !this.scene.getObjectByName("e_test_points")) {
             this.drawTestPoints()

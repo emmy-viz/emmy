@@ -4,7 +4,6 @@ export class Func {
     expression: math.MathNode
     compiled: math.EvalFunction
 
-
     constructor(expression: string) {
         this.expression = math.parse(expression);
         this.compiled = math.compile(expression)

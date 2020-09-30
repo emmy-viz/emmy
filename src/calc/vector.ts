@@ -8,6 +8,7 @@ export class Vector {
 
     x(): number {
         if (!Number.isFinite(this.d[0])) {
+            console.log("Vector.x(): Is not finite", this.d[0])
             return 0
         }
         return this.d[0]
@@ -15,6 +16,7 @@ export class Vector {
 
     y(): number {
         if (!Number.isFinite(this.d[1])) {
+            console.log("Vector.y(): Is not finite", this.d[0])
             return 0
         }
         return this.d[1]
@@ -22,6 +24,7 @@ export class Vector {
 
     z(): number {
         if (!Number.isFinite(this.d[2])) {
+            console.log("Vector.z(): Is not finite", this.d[0])
             return 0
         }
         return this.d[2];
@@ -80,6 +83,12 @@ export class Vector {
 
     perpendicular(b: Vector): Vector {
         return this.crossProduct(b).unit()
+    }
+
+    set(a: Vector) {
+        this.d[0] = a.d[0]
+        this.d[1] = a.d[1]
+        this.d[2] = a.d[2]
     }
 }
 

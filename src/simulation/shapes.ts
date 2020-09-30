@@ -9,12 +9,21 @@ export class Point {
 
     position: Vector
     velocity: Vector
+
+    force: Vector
+
     charge: number
+
+    isFixed: boolean
+    mass: number
 
     constructor(position: Vector, q: number) {
         this.position = position
         this.charge = q
         this.name = "point_" + ID
+        this.velocity = new Vector(0, 0, 0)
+        this.force = new Vector(0, 0, 0)
+        this.mass = 1
         ID++
     }
 

@@ -29,7 +29,7 @@ export class StateService {
     var sceneName = urlParams.get("scene")
 
     if (sceneName == "" || !sceneName) {
-      sceneName = "dipole"
+      sceneName = "motion"
     }
 
     let s = this.sceneService.loadScene(sceneName, canvas)

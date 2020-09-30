@@ -25,11 +25,12 @@ export class VectorField {
         let key = "" + x + "," + y + "," + z
         let scope = { x: x, y: y, z: z }
         if (key in this.evaluateMemo) {
-            return this.evaluateMemo[key]
+            let solution = this.evaluateMemo[key]
+            return solution
         }
 
         let solution = new Vector(this.d[0].evaluate(scope), this.d[1].evaluate(scope), this.d[2].evaluate(scope))
-        this.evaluateMemo[key] = solution
+        this.evaluateMemo[key] = new Vector(solution.x(), solution.y(), solution.z())
         return solution
     }
 
