@@ -72,11 +72,13 @@ export class SceneService {
     var negative = new Vector(5, 5, 0)
     sim_dipole.addPoint(positive, 10)
     sim_dipole.addPoint(negative, -10)
-    // visualization_dipole.drawTestPoints()
-    // visualization_dipole.isDrawEVectorField = true
-    // visualization_dipole.isDrawETestPoints = true
+    visualization_dipole.drawTestPoints()
+    visualization_dipole.isDrawEVectorField = true
+    visualization_dipole.isDrawETestPoints = true
+    visualization_dipole.isDrawEFieldLines = true
+    visualization_dipole.camera.position.y = 20
+    visualization_dipole.camera.position.z = 20
 
-    // visualization_dipole.drawEFieldLines()
 
     visualization_dipole.drawVectorField(sim_dipole.B(), 0x0000FF, "b_vector_field", .1)
 
