@@ -27,12 +27,12 @@
     "mocha": "^8.0.1",
     "stats.js": "^0.17.0",
     "three": "^0.118.3",
-    "ts-loader": "^8.0.1",
+    "ts-loader": "^8.4.0",
     "ts-node": "^8.10.2",
     "tsc": "^1.20150623.0",
     "typescript": "^3.9.7",
-    "webpack": "^4.43.0",
-    "webpack-cli": "^3.3.12",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.1",
     "webpack-dev-server": "^3.11.0"
   },
   "devDependencies": {
